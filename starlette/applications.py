@@ -95,24 +95,12 @@ class Starlette:
         name: str = None,
         include_in_schema: bool = True,
     ) -> typing.Callable:
-        def decorator(func: typing.Callable) -> typing.Callable:
-            self.router.add_route(
-                path,
-                func,
-                methods=methods,
-                name=name,
-                include_in_schema=include_in_schema,
-            )
-            return func
-
-        return decorator
+        return self.router.route(
+            path, methods=methods, name=name, include_in_schema=include_in_schema
+        )
 
     def websocket_route(self, path: str, name: str = None) -> typing.Callable:
-        def decorator(func: typing.Callable) -> typing.Callable:
-            self.router.add_websocket_route(path, func, name=name)
-            return func
-
-        return decorator
+        return self.router.websocket_route(path, name=name)
 
     def middleware(self, middleware_type: str) -> typing.Callable:
         assert (

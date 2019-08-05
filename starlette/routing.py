@@ -145,6 +145,8 @@ class Route(BaseRoute):
         include_in_schema: bool = True,
     ) -> None:
         assert path.startswith("/"), "Routed paths must start with '/'"
+        if isinstance(endpoint, Route):
+            endpoint = endpoint.endpoint
         self.path = path
         self.endpoint = endpoint
         self.name = get_name(endpoint) if name is None else name
@@ -221,6 +223,8 @@ class WebSocketRoute(BaseRoute):
         self, path: str, endpoint: typing.Callable, *, name: str = None
     ) -> None:
         assert path.startswith("/"), "Routed paths must start with '/'"
+        if isinstance(endpoint, WebSocketRoute):
+            endpoint = endpoint.endpoint
         self.path = path
         self.endpoint = endpoint
         self.name = get_name(endpoint) if name is None else name
@@ -512,7 +516,7 @@ class Router:
         methods: typing.List[str] = None,
         name: str = None,
         include_in_schema: bool = True,
-    ) -> None:
+    ) -> Route:
         route = Route(
             path,
             endpoint=endpoint,
@@ -521,12 +525,14 @@ class Router:
             include_in_schema=include_in_schema,
         )
         self.routes.append(route)
+        return route
 
     def add_websocket_route(
         self, path: str, endpoint: typing.Callable, name: str = None
-    ) -> None:
+    ) -> WebSocketRoute:
         route = WebSocketRoute(path, endpoint=endpoint, name=name)
         self.routes.append(route)
+        return route
 
     def route(
         self,
@@ -535,22 +541,22 @@ class Router:
         name: str = None,
         include_in_schema: bool = True,
     ) -> typing.Callable:
-        def decorator(func: typing.Callable) -> typing.Callable:
-            self.add_route(
+        def decorator(func: typing.Callable) -> Route:
+            route = self.add_route(
                 path,
                 func,
                 methods=methods,
                 name=name,
                 include_in_schema=include_in_schema,
             )
-            return func
+            return route
 
         return decorator
 
     def websocket_route(self, path: str, name: str = None) -> typing.Callable:
-        def decorator(func: typing.Callable) -> typing.Callable:
-            self.add_websocket_route(path, func, name=name)
-            return func
+        def decorator(func: typing.Callable) -> WebSocketRoute:
+            route = self.add_websocket_route(path, func, name=name)
+            return route
 
         return decorator
 
